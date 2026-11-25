@@ -49,65 +49,101 @@
         </div>
     @else
         <div class="mt-6 grid gap-6 lg:grid-cols-2">
-            <div class="card">
-                <h2 class="text-lg font-semibold">Klasemen Otomatis</h2>
-                <div class="table-wrap mt-3">
-                    <table>
-                        <thead>
-                            <tr class="text-left text-slate-500">
-                                <th class="p-2">Klub</th>
-                                <th class="p-2">P</th>
-                                <th class="p-2">W</th>
-                                <th class="p-2">D</th>
-                                <th class="p-2">L</th>
-                                <th class="p-2">Pts</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($standings as $row)
-                                <tr class="table-row-hover border-t">
-                                    <td class="p-2">{{ $clubs[$row['club_id']] ?? 'Klub #' . $row['club_id'] }}</td>
-                                    <td class="p-2">{{ $row['played'] }}</td>
-                                    <td class="p-2">{{ $row['win'] }}</td>
-                                    <td class="p-2">{{ $row['draw'] }}</td>
-                                    <td class="p-2">{{ $row['loss'] }}</td>
-                                    <td class="p-2 font-semibold">{{ $row['points'] }}</td>
+            @if ($isKnockout)
+                <div class="card lg:col-span-2">
+                    <h2 class="text-lg font-semibold">Bracket Knockout</h2>
+                    <div class="table-wrap mt-3">
+                        <table>
+                            <thead>
+                                <tr class="text-left text-slate-500">
+                                    <th class="p-2">Putaran</th>
+                                    <th class="p-2">Pertandingan</th>
+                                    <th class="p-2">Status</th>
+                                    <th class="p-2">Pemenang</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="p-4 text-center text-sm text-slate-500">Belum ada hasil pertandingan untuk event ini.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @forelse ($bracketRounds as $round)
+                                    @foreach ($round->matches as $match)
+                                        <tr class="table-row-hover border-t align-top">
+                                            <td class="p-2">{{ $round->name }}</td>
+                                            <td class="p-2">
+                                                {{ $match->homeClub?->name ?? 'TBA' }} vs {{ $match->awayClub?->name ?? 'TBA' }}
+                                            </td>
+                                            <td class="p-2">{{ $match->statusLabel() }}</td>
+                                            <td class="p-2">{{ $match->winnerClub?->name ?? '-' }}</td>
+                                        </tr>
+                                    @endforeach
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="p-4 text-center text-sm text-slate-500">Belum ada data bracket knockout untuk event ini.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            @else
+                <div class="card">
+                    <h2 class="text-lg font-semibold">Klasemen Otomatis</h2>
+                    <div class="table-wrap mt-3">
+                        <table>
+                            <thead>
+                                <tr class="text-left text-slate-500">
+                                    <th class="p-2">Klub</th>
+                                    <th class="p-2">P</th>
+                                    <th class="p-2">W</th>
+                                    <th class="p-2">D</th>
+                                    <th class="p-2">L</th>
+                                    <th class="p-2">Pts</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($standings as $row)
+                                    <tr class="table-row-hover border-t">
+                                        <td class="p-2">{{ $clubs[$row['club_id']] ?? 'Klub #' . $row['club_id'] }}</td>
+                                        <td class="p-2">{{ $row['played'] }}</td>
+                                        <td class="p-2">{{ $row['win'] }}</td>
+                                        <td class="p-2">{{ $row['draw'] }}</td>
+                                        <td class="p-2">{{ $row['loss'] }}</td>
+                                        <td class="p-2 font-semibold">{{ $row['points'] }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="p-4 text-center text-sm text-slate-500">Belum ada hasil pertandingan untuk event ini.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-            <div class="card">
-                <h2 class="text-lg font-semibold">Top Skor Otomatis</h2>
-                <div class="table-wrap mt-3">
-                    <table>
-                        <thead>
-                            <tr class="text-left text-slate-500">
-                                <th class="p-2">Pemain</th>
-                                <th class="p-2">Gol</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($topScorers as $scorer)
-                                <tr class="table-row-hover border-t">
-                                    <td class="p-2">{{ $scorer->name }}</td>
-                                    <td class="p-2 font-semibold">{{ $scorer->total_goals }}</td>
+                <div class="card">
+                    <h2 class="text-lg font-semibold">Top Skor Otomatis</h2>
+                    <div class="table-wrap mt-3">
+                        <table>
+                            <thead>
+                                <tr class="text-left text-slate-500">
+                                    <th class="p-2">Pemain</th>
+                                    <th class="p-2">Gol</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="2" class="p-4 text-center text-sm text-slate-500">Belum ada data gol.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @forelse ($topScorers as $scorer)
+                                    <tr class="table-row-hover border-t">
+                                        <td class="p-2">{{ $scorer->name }}</td>
+                                        <td class="p-2 font-semibold">{{ $scorer->total_goals }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="2" class="p-4 text-center text-sm text-slate-500">Belum ada data gol.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
 
         <div class="card mt-6">

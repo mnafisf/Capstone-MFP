@@ -42,18 +42,20 @@ class PublicHomeController extends Controller
         }
 
         $availableEvents = Event::query()
+            ->where('is_active', true)
             ->orderByDesc('start_date')
             ->limit(20)
             ->get();
 
         $featuredEvent = Event::query()
+            ->where('is_active', true)
             ->whereDate('start_date', '<=', now()->toDateString())
             ->whereDate('end_date', '>=', now()->toDateString())
             ->orderByDesc('start_date')
             ->first();
 
         if (! $featuredEvent) {
-            $featuredEvent = Event::query()->orderByDesc('start_date')->first();
+            $featuredEvent = Event::query()->where('is_active', true)->orderByDesc('start_date')->first();
         }
 
         $effectiveEventId = $selectedEventId ?: $featuredEvent?->id;

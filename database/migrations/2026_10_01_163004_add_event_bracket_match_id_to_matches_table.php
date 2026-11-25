@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('matches', function (Blueprint $table) {
-            //
+            if (! Schema::hasColumn('matches', 'event_bracket_match_id')) {
+                $table->foreignId('event_bracket_match_id')->nullable()->constrained('event_bracket_matches')->nullOnDelete()->after('event_id');
+            }
         });
     }
 
@@ -22,7 +24,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('matches', function (Blueprint $table) {
-            //
+            if (Schema::hasColumn('matches', 'event_bracket_match_id')) {
+                $table->dropForeignIdFor(\App\Models\EventBracketMatch::class, 'event_bracket_match_id');
+                $table->dropColumn('event_bracket_match_id');
+            }
         });
     }
 };

@@ -29,13 +29,30 @@
             <p class="panel-subtitle">Buat profil klub baru sebagai peserta kompetisi.</p>
             <form method="POST" action="{{ route('super-admin.clubs.store') }}" class="mt-4 space-y-3">
                 @csrf
-                <div><label class="label">Nama</label><input type="text" name="name" class="input" required></div>
-                <div><label class="label">Kode</label><input type="text" name="code" class="input" required></div>
+                <div>
+                    <label class="label">Nama</label>
+                    <input type="text" name="name" class="input" required>
+                    @error('name')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <label class="label">Kode</label>
+                    <input type="text" name="code" class="input" required>
+                    @error('code')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
                 <button class="btn-primary" type="submit">Simpan</button>
             </form>
         </div>
 
         <div class="card lg:col-span-2">
+            @if (session('success'))
+                <div class="alert-success mb-4">
+                    {{ session('success') }}
+                </div>
+            @endif
             @if ($errors->any())
                 <div class="alert-error mb-4">
                     {{ $errors->first() }}
@@ -72,37 +89,45 @@
                             </td>
                             <td class="p-2">
                                 <div class="flex flex-wrap gap-2">
-                                    <details>
-                                        <summary class="btn-secondary cursor-pointer list-none">Ubah</summary>
-                                        <form method="POST" action="{{ route('super-admin.clubs.update', $club) }}" class="mt-2 w-72 space-y-2 rounded-xl border border-slate-200 bg-white p-3">
-                                            @csrf
-                                            @method('PUT')
-                                            <div>
-                                                <label class="label">Nama</label>
-                                                <input type="text" name="name" class="input" value="{{ $club->name }}" required>
-                                            </div>
-                                            <div>
-                                                <label class="label">Kode</label>
-                                                <input type="text" name="code" class="input" value="{{ $club->code }}" required>
-                                            </div>
-                                            <div>
-                                                <label class="label">Status</label>
-                                                <select name="is_active" class="input">
-                                                    <option value="1" @selected($club->is_active)>Aktif</option>
-                                                    <option value="0" @selected(! $club->is_active)>Nonaktif</option>
-                                                </select>
-                                            </div>
-                                            <button class="btn-primary" type="submit">Perbarui</button>
-                                        </form>
-                                    </details>
+                                    <div class="relative" x-data="{ open: false }">
+                                        <button type="button" class="btn-secondary" @click="open = !open">Ubah</button>
+                                        <div x-show="open" x-transition x-cloak class="absolute right-0 top-full mt-1 w-80 rounded-xl border border-slate-200 bg-white p-3 shadow-lg z-10">
+                                            <form method="POST" action="{{ route('super-admin.clubs.update', $club) }}" class="space-y-2">
+                                                @csrf
+                                                @method('PUT')
+                                                <div>
+                                                    <label class="label">Nama</label>
+                                                    <input type="text" name="name" class="input" value="{{ $club->name }}" required>
+                                                    @error('name')
+                                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                                    @enderror
+                                                </div>
+                                                <div>
+                                                    <label class="label">Kode</label>
+                                                    <input type="text" name="code" class="input" value="{{ $club->code }}" required>
+                                                    @error('code')
+                                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                                    @enderror
+                                                </div>
+                                                <div>
+                                                    <label class="label">Status</label>
+                                                    <select name="is_active" class="input">
+                                                        <option value="1" @selected($club->is_active)>Aktif</option>
+                                                        <option value="0" @selected(! $club->is_active)>Nonaktif</option>
+                                                    </select>
+                                                </div>
+                                                <button class="btn-primary" type="submit">Perbarui</button>
+                                            </form>
+                                        </div>
+                                    </div>
 
                                     <form method="POST" action="{{ route('super-admin.clubs.toggle', $club) }}">
                                         @csrf
                                         @method('PATCH')
-                                        <button class="btn-secondary" type="submit">Ubah Status</button>
+                                        <button class="btn-secondary" type="submit">{{ $club->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
                                     </form>
 
-                                    <form method="POST" action="{{ route('super-admin.clubs.destroy', $club) }}">
+                                    <form method="POST" action="{{ route('super-admin.clubs.destroy', $club) }}" onsubmit="return confirm('Hapus klub ini? Data terkait (pemain, pertandingan, dll) akan terhapus.');">
                                         @csrf
                                         @method('DELETE')
                                         <button class="btn-danger" type="submit">Hapus</button>

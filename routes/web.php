@@ -37,6 +37,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profile/club-logo', [ProfileController::class, 'clubLogo'])
+        ->name('profile.club-logo');
 
     Route::prefix('super-admin')->name('super-admin.')->middleware('role:super-admin')->group(function () {
         Route::get('/admins', [AdminManagementController::class, 'index'])->name('admins.index');

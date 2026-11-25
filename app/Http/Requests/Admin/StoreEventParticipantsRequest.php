@@ -42,6 +42,22 @@ class StoreEventParticipantsRequest extends FormRequest
                     'Jumlah klub melebihi kapasitas bagan ('.$capacity.' slot). Hapus bagan atau buat ulang dengan jumlah tim yang lebih besar.',
                 );
             }
+
+            // Ensure all selected clubs are active
+            $clubIds = $this->input('club_ids', []);
+            if (! empty($clubIds)) {
+                $inactiveCount = \App\Models\Club::query()
+                    ->whereIn('id', $clubIds)
+                    ->where('is_active', false)
+                    ->count();
+
+                if ($inactiveCount > 0) {
+                    $validator->errors()->add(
+                        'club_ids',
+                        'Beberapa klub yang dipilih tidak aktif. Hanya klub aktif yang dapat menjadi peserta event.'
+                    );
+                }
+            }
         });
     }
 }

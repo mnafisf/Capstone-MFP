@@ -33,12 +33,37 @@ class MatchController extends Controller
 
     public function index(Request $request): View
     {
-        $matches = $this->matchRepository->paginate($request->search);
+        $validated = $request->validate([
+            'event_id' => ['nullable', 'integer', 'exists:events,id'],
+        ]);
+
+        $selectedEventId = isset($validated['event_id'])
+            ? (int) $validated['event_id']
+            : null;
+
+        $matches = $this->matchRepository->paginate(
+            $request->search,
+            $selectedEventId
+        );
+
+        $events = Event::query()->orderBy('name')->get();
+        $clubs = Club::query()->where('is_active', true)->orderBy('name')->get();
+
+        $eventParticipants = [];
+        foreach ($events as $event) {
+            $eventParticipants[$event->id] = $event->participants()
+                ->with('club')
+                ->get()
+                ->pluck('club_id')
+                ->toArray();
+        }
 
         return view('admin.matches.index', [
             'matches' => $matches,
-            'events' => Event::query()->orderBy('name')->get(),
-            'clubs' => Club::query()->where('is_active', true)->orderBy('name')->get(),
+            'events' => $events,
+            'selectedEventId' => $selectedEventId,
+            'clubs' => $clubs,
+            'eventParticipants' => $eventParticipants,
             'stadiums' => Stadium::query()->where('is_active', true)->orderBy('name')->get(),
             'referees' => Referee::query()->orderBy('name')->get(),
         ]);
@@ -89,64 +114,27 @@ class MatchController extends Controller
         )->values();
 
         // Load all approved players from both clubs (auto-appear in dropdowns)
-        $homeApprovedPlayers = Player::query()
-            ->where('club_id', $match->home_club_id)
-            ->where('status', 'approved')
-            ->orderBy('name')
-            ->get();
-        $awayApprovedPlayers = Player::query()
-            ->where('club_id', $match->away_club_id)
-            ->where('status', 'approved')
-            ->orderBy('name')
-            ->get();
+        $homeSelectPlayers = $homeLineupPlayers
+            ->map(function ($slot) {
+                return [
+                    'id' => (int) $slot->player_id,
+                    'name' => $slot->player?->name,
+                    'in_lineup' => true,
+                    'position_type' => $slot->position_type,
+                ];
+            })
+            ->values();
 
-        // Build combined player lists for dropdowns: lineup players first (with position badge), then other approved players
-        $homeLineupPlayerIds = $homeLineupPlayers->pluck('player_id')->map(fn ($id) => (int) $id)->all();
-        $awayLineupPlayerIds = $awayLineupPlayers->pluck('player_id')->map(fn ($id) => (int) $id)->all();
-
-        $homeSelectPlayers = $homeActivePlayers->map(function ($slot) {
-            return [
-                'id' => $slot->player_id,
-                'name' => $slot->player?->name,
-                'in_lineup' => true,
-                'position_type' => $slot->position_type,
-            ];
-        })->values();
-
-        $homeSelectPlayers = $homeSelectPlayers->concat(
-            $homeApprovedPlayers
-                ->whereNotIn('id', $homeLineupPlayerIds)
-                ->map(function ($player) {
-                    return [
-                        'id' => $player->id,
-                        'name' => $player->name,
-                        'in_lineup' => false,
-                        'position_type' => null,
-                    ];
-                })->values()
-        );
-
-        $awaySelectPlayers = $awayActivePlayers->map(function ($slot) {
-            return [
-                'id' => $slot->player_id,
-                'name' => $slot->player?->name,
-                'in_lineup' => true,
-                'position_type' => $slot->position_type,
-            ];
-        })->values();
-
-        $awaySelectPlayers = $awaySelectPlayers->concat(
-            $awayApprovedPlayers
-                ->whereNotIn('id', $awayLineupPlayerIds)
-                ->map(function ($player) {
-                    return [
-                        'id' => $player->id,
-                        'name' => $player->name,
-                        'in_lineup' => false,
-                        'position_type' => null,
-                    ];
-                })->values()
-        );
+        $awaySelectPlayers = $awayLineupPlayers
+            ->map(function ($slot) {
+                return [
+                    'id' => (int) $slot->player_id,
+                    'name' => $slot->player?->name,
+                    'in_lineup' => true,
+                    'position_type' => $slot->position_type,
+                ];
+            })
+            ->values();
 
         return view('admin.matches.show', [
             'match' => $match,
@@ -297,7 +285,7 @@ class MatchController extends Controller
 
     public function monitoring(Request $request): View
     {
-        $events = Event::query()->orderBy('name')->get();
+        $events = Event::query()->where('is_active', true)->orderBy('name')->get();
         $eventId = (int) $request->get('event_id');
 
         if (! $eventId) {
@@ -312,12 +300,24 @@ class MatchController extends Controller
         }
 
         $event = Event::findOrFail($eventId);
-        $standings = $this->matchService->standingsByEvent($event->id);
-        $clubIds = $standings->pluck('club_id');
+
+        $isKnockout = $event->isKnockout();
+
+        if ($isKnockout) {
+            $bracketRounds = $event->bracketRounds()->with('matches.homeClub', 'matches.awayClub', 'matches.winnerClub')->get();
+            $standings = collect();
+            $clubIds = collect();
+        } else {
+            $bracketRounds = collect();
+            $standings = $this->matchService->standingsByEvent($event->id);
+            $clubIds = $standings->pluck('club_id');
+        }
 
         return view('admin.monitoring.index', [
             'events' => $events,
             'event' => $event,
+            'isKnockout' => $isKnockout,
+            'bracketRounds' => $bracketRounds,
             'clubs' => Club::query()->whereIn('id', $clubIds)->pluck('name', 'id'),
             'standings' => $standings,
             'topScorers' => $this->matchService->topScorersByEvent($event->id),

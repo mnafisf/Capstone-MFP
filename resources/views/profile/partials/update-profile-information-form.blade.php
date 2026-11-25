@@ -9,6 +9,78 @@
         </p>
     </header>
 
+    @if ($user->hasRole('club-admin') && $user->club)
+        <section class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="bg-gradient-to-r from-blue-950 via-blue-800 to-indigo-700 px-5 py-6 sm:px-7">
+                <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
+                    <div class="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/30 bg-white/15 text-2xl font-bold text-white shadow-lg">
+                        {{ strtoupper(substr($user->club->code ?: $user->club->name, 0, 3)) }}
+
+                        @if ($user->club->logo_path)
+                            <img
+                                src="{{ route('profile.club-logo') }}"
+                                alt="Logo {{ $user->club->name }}"
+                                class="absolute inset-0 h-full w-full bg-white object-contain p-2"
+                                onerror="this.remove()"
+                            >
+                        @endif
+                    </div>
+
+                    <div class="min-w-0 flex-1 text-white">
+                        <p class="text-sm font-medium text-blue-100">Informasi klub</p>
+                        <h3 class="mt-1 break-words text-2xl font-bold tracking-tight">
+                            {{ $user->club->name }}
+                        </h3>
+                        <p class="mt-1 text-sm text-blue-100">
+                            Kode klub:
+                            <span class="font-semibold text-white">{{ $user->club->code ?: '-' }}</span>
+                        </p>
+                    </div>
+
+                    <span class="{{ $user->club->is_active
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-slate-200 text-slate-700' }} inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold">
+                        <span class="{{ $user->club->is_active ? 'bg-emerald-500' : 'bg-slate-500' }} h-2 w-2 rounded-full"></span>
+                        {{ $user->club->is_active ? 'Klub aktif' : 'Klub nonaktif' }}
+                    </span>
+                </div>
+            </div>
+
+            @php
+                $clubColors = [
+                    ['label' => 'Warna baju', 'value' => $user->club->shirt_color],
+                    ['label' => 'Warna celana', 'value' => $user->club->pants_color],
+                    ['label' => 'Warna kaus kaki', 'value' => $user->club->socks_color],
+                ];
+            @endphp
+
+            <div class="grid gap-3 p-5 sm:grid-cols-2 sm:p-7 lg:grid-cols-3">
+                @foreach ($clubColors as $color)
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            {{ $color['label'] }}
+                        </p>
+
+                        @if (is_string($color['value']) && preg_match('/^#[0-9a-fA-F]{6}$/', $color['value']))
+                            <div class="mt-3 flex items-center gap-3">
+                                <span
+                                    class="h-10 w-10 rounded-lg border border-slate-300 shadow-sm"
+                                    style="background-color: {{ $color['value'] }}"
+                                    role="img"
+                                    aria-label="{{ $color['label'] }}"
+                                ></span>
+                                <span class="text-sm font-medium text-slate-700">Warna klub</span>
+                            </div>
+                        @else
+                            <p class="mt-3 text-sm text-slate-500">Belum diatur</p>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+
+        </section>
+    @endif
+
     <form id="send-verification" method="post" action="{{ route('verification.send') }}">
         @csrf
     </form>

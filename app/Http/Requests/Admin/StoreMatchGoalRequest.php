@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\LineupPlayer;
 use App\Models\MatchModel;
 use App\Models\Player;
 use Illuminate\Foundation\Http\FormRequest;
@@ -27,21 +28,46 @@ class StoreMatchGoalRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
             /** @var MatchModel|null $match */
             $match = $this->route('match');
+
             if (! $match instanceof MatchModel) {
                 return;
             }
 
             $clubId = (int) $this->input('club_id');
+
             if (! in_array($clubId, [(int) $match->home_club_id, (int) $match->away_club_id], true)) {
                 $validator->errors()->add('club_id', 'Club harus tim kandang atau tamu pada pertandingan ini.');
+
+                return;
             }
 
             $playerId = (int) $this->input('player_id');
             $player = Player::query()->find($playerId);
-            if ($player && (int) $player->club_id !== $clubId) {
+
+            if (! $player || (int) $player->club_id !== $clubId) {
                 $validator->errors()->add('player_id', 'Pemain tidak terdaftar pada club yang dipilih.');
+
+                return;
+            }
+
+            $isInMatchLineup = LineupPlayer::query()
+                ->where('player_id', $playerId)
+                ->whereHas('lineup', fn ($query) => $query
+                    ->where('match_id', $match->id)
+                    ->where('club_id', $clubId))
+                ->exists();
+
+            if (! $isInMatchLineup) {
+                $validator->errors()->add(
+                    'player_id',
+                    'Pemain harus terdaftar di lineup klub untuk pertandingan ini.'
+                );
             }
         });
     }

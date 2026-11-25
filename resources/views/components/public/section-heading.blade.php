@@ -4,7 +4,7 @@
     'subtitle' => null,
 ])
 
-<div {{ $attributes->merge(['class' => 'home-section-head']) }}>
+<div {{ $attributes->merge(['class' => 'home-section-head items-start']) }}>
     <div>
         @if ($eyebrow)
             <p class="home-section-eyebrow">{{ $eyebrow }}</p>
@@ -13,10 +13,11 @@
         @if ($subtitle)
             <p class="home-section-subtitle">{{ $subtitle }}</p>
         @endif
+
+        @if (isset($actions))
+            <div class="home-section-actions mt-3 justify-start">
+                {{ $actions }}
+            </div>
+        @endif
     </div>
-    @if (isset($actions))
-        <div class="home-section-actions shrink-0">
-            {{ $actions }}
-        </div>
-    @endif
 </div>

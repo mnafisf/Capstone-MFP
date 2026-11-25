@@ -29,7 +29,7 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <a href="{{ route('admin.matches.index') }}" class="btn-secondary">Kembali ke Jadwal</a>
-                    <a href="{{ route('admin.matches.dsp.download', $match) }}" class="btn-secondary">Lihat DSP</a>
+                    <a href="{{ route('admin.matches.dsp.download', $match) }}" class="btn-secondary">Match Summary</a>
                 </div>
             </div>
 
@@ -101,21 +101,28 @@
                         <form method="POST" action="{{ route('admin.matches.goals.store', $match) }}" class="mt-3 space-y-3 rounded-lg border border-blue-100 bg-blue-50/50 p-3">
                             @csrf
                             <input type="hidden" name="club_id" value="{{ $match->home_club_id }}">
-                            <p class="text-xs text-slate-500">Pemain diambil dari lineup yang sudah disusun klub admin. Pemain approved lain juga tersedia.</p>
+                            <p class="text-xs text-slate-500">
+                                Pemain hanya tersedia jika sudah dimasukkan klub ke lineup pertandingan ini.
+                            </p>
+
+                            @if ($homeSelectPlayers->isEmpty())
+                                <p class="text-sm text-amber-700">
+                                    Klub belum memasukkan lineup untuk pertandingan ini.
+                                </p>
+                            @endif
+
                             <div>
                                 <label class="label">Pemain</label>
                                 <select name="player_id" class="input w-full" required>
                                     <option value="">Pilih pemain</option>
-                                    @foreach ($homeSelectPlayers as $p)
+                                    @forelse ($homeSelectPlayers as $p)
                                         <option value="{{ $p['id'] }}">
                                             {{ $p['name'] }}
-                                            @if ($p['in_lineup'])
-                                                {{ $p['position_type'] === 'starter' ? '(Starter)' : '(Masuk dari cadangan)' }}
-                                            @else
-                                                (Pemain approved)
-                                            @endif
+                                            ({{ $p['position_type'] === 'starter' ? 'Starter' : 'Cadangan' }})
                                         </option>
-                                    @endforeach
+                                    @empty
+                                        <option value="" disabled>Belum ada pemain di lineup</option>
+                                    @endforelse
                                 </select>
                             </div>
                             <div>
@@ -155,21 +162,28 @@
                         <form method="POST" action="{{ route('admin.matches.cards.store', $match) }}" class="mt-3 space-y-3 rounded-lg border border-blue-100 bg-blue-50/50 p-3">
                             @csrf
                             <input type="hidden" name="club_id" value="{{ $match->home_club_id }}">
-                            <p class="text-xs text-slate-500">Pemain kartu diambil dari lineup aktif pertandingan. Pemain approved lain juga tersedia.</p>
+                            <p class="text-xs text-slate-500">
+                                Pemain hanya tersedia jika sudah dimasukkan klub ke lineup pertandingan ini.
+                            </p>
+
+                            @if ($homeSelectPlayers->isEmpty())
+                                <p class="text-sm text-amber-700">
+                                    Klub belum memasukkan lineup untuk pertandingan ini.
+                                </p>
+                            @endif
+
                             <div>
                                 <label class="label">Pemain</label>
                                 <select name="player_id" class="input w-full" required>
                                     <option value="">Pilih pemain</option>
-                                    @foreach ($homeSelectPlayers as $p)
+                                    @forelse ($homeSelectPlayers as $p)
                                         <option value="{{ $p['id'] }}">
                                             {{ $p['name'] }}
-                                            @if ($p['in_lineup'])
-                                                {{ $p['position_type'] === 'starter' ? '(Starter)' : '(Masuk dari cadangan)' }}
-                                            @else
-                                                (Pemain approved)
-                                            @endif
+                                            ({{ $p['position_type'] === 'starter' ? 'Starter' : 'Cadangan' }})
                                         </option>
-                                    @endforeach
+                                    @empty
+                                        <option value="" disabled>Belum ada pemain di lineup</option>
+                                    @endforelse
                                 </select>
                             </div>
                             <div>
@@ -281,21 +295,28 @@
                         <form method="POST" action="{{ route('admin.matches.goals.store', $match) }}" class="mt-3 space-y-3 rounded-lg border border-amber-100 bg-amber-50/50 p-3">
                             @csrf
                             <input type="hidden" name="club_id" value="{{ $match->away_club_id }}">
-                            <p class="text-xs text-slate-500">Pemain diambil dari lineup yang sudah disusun klub admin. Pemain approved lain juga tersedia.</p>
+                            <p class="text-xs text-slate-500">
+                                Pemain hanya tersedia jika sudah dimasukkan klub ke lineup pertandingan ini.
+                            </p>
+
+                            @if ($awaySelectPlayers->isEmpty())
+                                <p class="text-sm text-amber-700">
+                                    Klub belum memasukkan lineup untuk pertandingan ini.
+                                </p>
+                            @endif
+
                             <div>
                                 <label class="label">Pemain</label>
                                 <select name="player_id" class="input w-full" required>
                                     <option value="">Pilih pemain</option>
-                                    @foreach ($awaySelectPlayers as $p)
+                                    @forelse ($awaySelectPlayers as $p)
                                         <option value="{{ $p['id'] }}">
                                             {{ $p['name'] }}
-                                            @if ($p['in_lineup'])
-                                                {{ $p['position_type'] === 'starter' ? '(Starter)' : '(Masuk dari cadangan)' }}
-                                            @else
-                                                (Pemain approved)
-                                            @endif
+                                            ({{ $p['position_type'] === 'starter' ? 'Starter' : 'Cadangan' }})
                                         </option>
-                                    @endforeach
+                                    @empty
+                                        <option value="" disabled>Belum ada pemain di lineup</option>
+                                    @endforelse
                                 </select>
                             </div>
                             <div>
@@ -335,21 +356,28 @@
                         <form method="POST" action="{{ route('admin.matches.cards.store', $match) }}" class="mt-3 space-y-3 rounded-lg border border-amber-100 bg-amber-50/50 p-3">
                             @csrf
                             <input type="hidden" name="club_id" value="{{ $match->away_club_id }}">
-                            <p class="text-xs text-slate-500">Pemain kartu diambil dari lineup aktif pertandingan. Pemain approved lain juga tersedia.</p>
+                            <p class="text-xs text-slate-500">
+                                Pemain hanya tersedia jika sudah dimasukkan klub ke lineup pertandingan ini.
+                            </p>
+
+                            @if ($awaySelectPlayers->isEmpty())
+                                <p class="text-sm text-amber-700">
+                                    Klub belum memasukkan lineup untuk pertandingan ini.
+                                </p>
+                            @endif
+
                             <div>
                                 <label class="label">Pemain</label>
                                 <select name="player_id" class="input w-full" required>
                                     <option value="">Pilih pemain</option>
-                                    @foreach ($awaySelectPlayers as $p)
+                                    @forelse ($awaySelectPlayers as $p)
                                         <option value="{{ $p['id'] }}">
                                             {{ $p['name'] }}
-                                            @if ($p['in_lineup'])
-                                                {{ $p['position_type'] === 'starter' ? '(Starter)' : '(Masuk dari cadangan)' }}
-                                            @else
-                                                (Pemain approved)
-                                            @endif
+                                            ({{ $p['position_type'] === 'starter' ? 'Starter' : 'Cadangan' }})
                                         </option>
-                                    @endforeach
+                                    @empty
+                                        <option value="" disabled>Belum ada pemain di lineup</option>
+                                    @endforelse
                                 </select>
                             </div>
                             <div>

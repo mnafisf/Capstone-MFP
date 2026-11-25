@@ -8,16 +8,38 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ProfileController extends Controller
 {
+
+    public function clubLogo(Request $request): BinaryFileResponse
+    {
+        $user = $request->user();
+
+        abort_unless($user->hasRole('club-admin'), 404);
+
+        $club = $user->club;
+        abort_unless($club && filled($club->logo_path), 404);
+
+        $disk = Storage::disk('public');
+        abort_unless($disk->exists($club->logo_path), 404);
+
+        return response()->file($disk->path($club->logo_path), [
+            'Content-Type' => $disk->mimeType($club->logo_path) ?: 'application/octet-stream',
+            'Content-Disposition' => 'inline; filename="'.basename($club->logo_path).'"',
+        ]);
+    }
     /**
      * Display the user's profile form.
      */
     public function edit(Request $request): View
     {
+        $user = $request->user()->loadMissing('club');
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
         ]);
     }
 

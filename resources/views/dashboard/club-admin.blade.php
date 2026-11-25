@@ -17,6 +17,14 @@
                     @if ($club->code)
                         <p class="mt-1 text-sm font-medium text-blue-100">Kode klub: {{ $club->code }}</p>
                     @endif
+                    <p class="mt-1 flex items-center gap-2">
+                        <span class="status-badge {{ $club->is_active ? 'status-active' : 'status-inactive' }} text-xs">
+                            {{ $club->is_active ? 'Aktif' : 'Nonaktif' }}
+                        </span>
+                        @if (! $club->is_active)
+                            <span class="text-xs text-amber-200">Klub dinonaktifkan oleh Super Admin</span>
+                        @endif
+                    </p>
                     <p class="mt-3 max-w-xl text-sm leading-relaxed text-blue-100">
                         Halo <span class="font-semibold text-white">{{ auth()->user()->name }}</span>,
                         pantau status tim dan selesaikan tugas administrasi kompetisi dari satu tempat.

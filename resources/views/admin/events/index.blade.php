@@ -29,6 +29,17 @@
             </div>
         </div>
 
+        @if (session('success'))
+            <div class="alert-success m-4">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if ($errors->any())
+            <div class="alert-error m-4">
+                {{ $errors->first() }}
+            </div>
+        @endif
+
         <div class="table-wrap mt-4">
             <table>
                 <thead class="text-left text-slate-500">

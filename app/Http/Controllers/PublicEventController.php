@@ -18,7 +18,7 @@ class PublicEventController extends Controller
     {
         $filter = $request->query('filter', 'semua');
 
-        $eventsQuery = Event::query()->orderByDesc('start_date');
+        $eventsQuery = Event::query()->where('is_active', true)->orderByDesc('start_date');
 
         if ($filter === 'berlangsung') {
             $eventsQuery->whereDate('start_date', '<=', now()->toDateString())
@@ -43,6 +43,7 @@ class PublicEventController extends Controller
 
     public function show(Event $event): View
     {
+        abort_unless($event->is_active, 404);
         $event->load([
             'matches' => fn ($query) => $query
                 ->with([

@@ -21,9 +21,6 @@
         <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-900/60 to-slate-900/80"></div>
 
         <div class="relative mx-auto max-w-7xl px-4 lg:px-8 py-20 lg:py-28">
-            <div class="flex justify-center">
-                <span class="home-hero-chip">ABEL GENTO</span>
-            </div>
             <p class="mt-3 text-center text-xs font-bold uppercase tracking-[0.25em] text-blue-100">Platform Event Sepak Bola</p>
             <h1 class="home-hero-title mt-3">SAPHYR.</h1>
             <p class="mx-auto mt-4 max-w-2xl text-center text-sm leading-relaxed text-blue-100 md:text-base">
@@ -36,7 +33,7 @@
                     <input type="text" name="club" value="{{ $clubQuery }}" class="home-search-input" placeholder="Cari nama tim, kode klub...">
                 </div>
                 <div class="flex items-center gap-2 px-2">
-                    <select name="event_id" class="home-search-input max-w-[220px] rounded-lg border border-slate-200 px-2 py-1.5 text-sm text-slate-700">
+                    <select name="event_id" class="home-search-input max-w-[220px] rounded-lg border border-slate-200 pl-2 pr-8 py-1.5 text-sm text-slate-700">
                         <option value="">Semua Event</option>
                         @foreach ($availableEvents as $event)
                             <option value="{{ $event->id }}" @selected((string) $selectedEventId === (string) $event->id)>{{ $event->name }}</option>

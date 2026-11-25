@@ -41,6 +41,10 @@ class MatchModel extends Model
 
     public function canManageLineups(): bool
     {
+        if (! $this->match_date) {
+            return false;
+        }
+
         return $this->match_date->isFuture() && $this->lineup_deadline && now()->lte($this->lineup_deadline);
     }
 
