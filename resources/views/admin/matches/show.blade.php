@@ -29,7 +29,7 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <a href="{{ route('admin.matches.index') }}" class="btn-secondary">Kembali ke Jadwal</a>
-                    <a href="{{ route('admin.matches.dsp.download', $match) }}" class="btn-secondary">Match Summary</a>
+                    <!-- <a href="{{ route('admin.matches.dsp.download', $match) }}" class="btn-secondary">Match Summary</a> -->
                 </div>
             </div>
 

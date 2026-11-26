@@ -69,9 +69,9 @@
                                 @if ($transfer->verification_status === 'approved')
                                     <p class="mt-2 text-xs text-emerald-600">Pemain sudah dipindahkan otomatis ke klub tujuan.</p>
                                 @elseif ($transfer->verification_status === 'rejected')
-                                    <p class="mt-2 text-xs text-red-600">Mutasi ditolak super admin.</p>
+                                    <p class="mt-2 text-xs text-red-600">Mutasi ditolak.</p>
                                 @else
-                                    <p class="mt-2 text-xs text-amber-600">Menunggu approve super admin.</p>
+                                    <p class="mt-2 text-xs text-amber-600">Menunggu approve admin.</p>
                                 @endif
                             </td>
                         </tr>

@@ -2,752 +2,304 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Match Summary Report</title>
-    @include('partials.pdf.dsp-styles')
+
     <style>
-        .logo {
-            width: 55px;
+        @page { margin: 24px 28px; }
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            color: #202938;
+            font-size: 9px;
+            line-height: 1.4;
         }
-
-        .header-table {
-            border: none;
-        }
-
-        .header-table td {
-            border: none;
-        }
-
-        .title {
-            text-align: center;
-        }
-
-        .title h1 {
-            font-size: 22px;
-            margin-bottom: 2px;
-        }
-
-        .title h2 {
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        .team-name {
-            font-size: 12px;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .score {
-            font-size: 28px;
-            font-weight: bold;
-            text-align: center;
-        }
-
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #d7dde5; padding: 5px 6px; vertical-align: middle; }
+        th { background: #edf1f5; color: #263445; font-weight: bold; text-align: center; }
+        .header-table, .header-table td,
+        .team-score-table, .team-score-table td,
+        .signature-table, .signature-table td { border: none; }
+        .header-table { margin-bottom: 12px; }
+        .logo { width: 58px; height: auto; }
+        .title { text-align: center; }
+        .title h1 { margin: 0; font-size: 21px; letter-spacing: 1.2px; color: #172b4d; }
+        .title h2 { margin: 4px 0 0; font-size: 11px; color: #526174; }
+        .report-label { font-size: 8px; color: #718096; text-align: right; }
+        .match-info-table { margin: 8px 0 12px; }
+        .match-info-table td { text-align: center; }
+        .team-score-table { margin: 5px 0 14px; }
+        .team-name { font-size: 12px; font-weight: bold; text-align: center; color: #172b4d; }
+        .score { font-size: 27px; font-weight: bold; text-align: center; color: #172b4d; white-space: nowrap; }
+        .score-caption { text-align: center; font-size: 7px; color: #718096; }
         .section-title {
-            margin-top: 8px;
-            margin-bottom: 4px;
-            background: #efefef;
-            border: 1px solid #000;
-            padding: 4px;
+            margin: 12px 0 5px;
+            padding: 6px 8px;
+            background: #e9eef5;
+            border-left: 4px solid #263f63;
+            color: #172b4d;
+            font-size: 9px;
             font-weight: bold;
+            letter-spacing: .4px;
         }
-
-        .player-table th,
-        .player-table td {
-            font-size: 8px;
-            padding: 2px;
-        }
-
-        .signature {
-            height: 45px;
-        }
-
-        .footer {
-            margin-top: 12px;
-            font-size: 8px;
-            text-align: center;
-        }
-
-        .gray {
-            background: #f5f5f5;
-        }
-
-        .match-info-table {
-            margin-top: 8px;
-        }
-
-        .team-score-table {
-            margin-top: 5px;
-        }
-
-        .goals-table,
-        .substitutions-table,
-        .notes-table {
-            width: 100%;
-        }
-
-        .signature-table {
-            margin-top: 15px;
-            border: none;
-        }
-
-        .signature-table td {
-            border: none;
-        }
-
-        hr {
-            margin-top: 20px;
-        }
+        .player-columns { table-layout: fixed; }
+        .player-columns > tbody > tr > td { width: 50%; padding: 0 4px; vertical-align: top; border: none; }
+        .player-table { table-layout: fixed; }
+        .player-table th, .player-table td { font-size: 7.5px; padding: 4px 3px; }
+        .player-table .player-name { text-align: left; }
+        .subheading td { background: #f1f4f8; color: #43536a; font-weight: bold; text-align: center; }
+        .center { text-align: center; }
+        .muted { color: #788596; }
+        .empty-row { text-align: center; color: #788596; font-style: italic; padding: 8px; }
+        .event-table { margin-bottom: 5px; }
+        .event-table td { padding: 5px 6px; }
+        .notes-box { min-height: 45px; padding: 9px; border: 1px solid #d7dde5; white-space: pre-line; }
+        .signature-table { margin-top: 22px; page-break-inside: avoid; }
+        .signature-table td { width: 33.33%; text-align: center; padding: 4px 8px; }
+        .signature-role { font-weight: bold; color: #35465d; }
+        .signature-space { height: 55px; }
+        .signature-line { width: 78%; margin: 0 auto; border-top: 1px solid #566273; }
+        .footer { margin-top: 15px; padding-top: 7px; border-top: 1px solid #d7dde5; text-align: center; font-size: 7.5px; color: #788596; }
+        .page-break-avoid { page-break-inside: avoid; }
     </style>
 </head>
-
 <body>
 
-<!-- HEADER -->
+@php
+    $homeClub = $match->homeClub;
+    $awayClub = $match->awayClub;
+    $goals = collect($match->goals ?? []);
+    $cards = collect($match->cards ?? []);
+    $substitutions = collect($match->substitutions ?? []);
+    $matchDate = $match->match_date
+        ? \Carbon\Carbon::parse($match->match_date)
+        : null;
+
+    $teams = [
+        [
+            'club' => $homeClub,
+            'starters' => collect($homeStarters ?? []),
+            'substitutes' => collect($homeSubstitutes ?? []),
+        ],
+        [
+            'club' => $awayClub,
+            'starters' => collect($awayStarters ?? []),
+            'substitutes' => collect($awaySubstitutes ?? []),
+        ],
+    ];
+@endphp
 
 <table class="header-table">
-
-<tr>
-
-<td style="width:15%; text-align:center;">
-
-@if(file_exists(public_path('logo1.png')))
-
-<img src="{{ public_path('logo1.png') }}" class="logo">
-
-@elseif(file_exists(public_path('logo.png')))
-
-<img src="{{ public_path('logo.png') }}" class="logo">
-
-@endif
-
-</td>
-
-<td style="width:70%;" class="title">
-
-<h1>MATCH SUMMARY</h1>
-
-<h2>{{ strtoupper($match->event->name ?? 'FOOTBALL EVENT') }}</h2>
-
-</td>
-
-<td style="width:15%;">
-
-</td>
-
-</tr>
-
+    <tr>
+        <td style="width: 15%; text-align: center;">
+            @if(file_exists(public_path('logo1.png')))
+                <img src="{{ public_path('logo1.png') }}" class="logo" alt="Logo">
+            @elseif(file_exists(public_path('logo.png')))
+                <img src="{{ public_path('logo.png') }}" class="logo" alt="Logo">
+            @endif
+        </td>
+        <td style="width: 70%;" class="title">
+            <h1>MATCH SUMMARY</h1>
+            <h2>{{ strtoupper($match->event->name ?? 'FOOTBALL EVENT') }}</h2>
+        </td>
+        <td style="width: 15%;" class="report-label">SAPHYR<br>OFFICIAL REPORT</td>
+    </tr>
 </table>
 
-<!-- MATCH INFORMATION -->
-
+<div class="section-title">INFORMASI PERTANDINGAN</div>
 <table class="match-info-table">
+    <thead>
+        <tr>
+            <th style="width: 12%;">ID Pertandingan</th>
+            <th style="width: 28%;">Tanggal &amp; Kick Off</th>
+            <th>Stadion</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>{{ $match->id ?? '-' }}</td>
+            <td>{{ $matchDate ? $matchDate->format('d/m/Y H:i') . ' WIB' : '-' }}</td>
+            <td>{{ $match->stadium->name ?? '-' }}</td>
+        </tr>
+    </tbody>
+</table>
 
+<table class="team-score-table page-break-avoid">
     <tr>
-
-        <th style="width:8%">No</th>
-
-        <th style="width:22%">Tanggal & Kick Off</th>
-
-        <th>Stadion</th>
-
+        <td style="width: 42%;">
+            <div class="team-name">{{ strtoupper($homeClub->name ?? 'TIM KANDANG') }}</div>
+        </td>
+        <td style="width: 16%;">
+            <div class="score">
+                {{ $match->result->home_score ?? 0 }} - {{ $match->result->away_score ?? 0 }}
+            </div>
+            <div class="score-caption">SKOR AKHIR</div>
+        </td>
+        <td style="width: 42%;">
+            <div class="team-name">{{ strtoupper($awayClub->name ?? 'TIM TANDANG') }}</div>
+        </td>
     </tr>
-
-    <tr>
-
-        <td class="text-center">
-            {{ $match->id }}
-        </td>
-
-        <td class="text-center">
-            {{ $match->match_date->format('d/m/Y H:i') }} WIB
-        </td>
-
-        <td class="text-center">
-            {{ $match->stadium->name ?? '-' }}
-        </td>
-
-    </tr>
-
 </table>
 
-<table class="team-score-table">
+<div class="section-title">DAFTAR PEMAIN</div>
+<table class="player-columns">
+    <tbody>
+        <tr>
+            @foreach($teams as $team)
+                <td>
+                    <div class="team-name" style="font-size: 9px; margin-bottom: 5px;">
+                        {{ strtoupper($team['club']->name ?? 'KLUB') }}
+                    </div>
+                    <table class="player-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 9%;">No</th>
+                                <th style="width: 12%;">Pos</th>
+                                <th>Nama Pemain</th>
+                                <th style="width: 9%;">G</th>
+                                <th style="width: 9%;">Y</th>
+                                <th style="width: 9%;">R</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($team['starters'] as $slot)
+                                @php
+                                    $player = $slot->player ?? null;
+                                    $playerGoals = $player ? $goals->where('player_id', $player->id)->count() : 0;
+                                    $yellowCards = $player ? $cards->where('player_id', $player->id)->where('card_type', 'yellow')->count() : 0;
+                                    $redCards = $player ? $cards->where('player_id', $player->id)->where('card_type', 'red')->count() : 0;
+                                @endphp
+                                <tr>
+                                    <td class="center">{{ $player->jersey_number ?? '-' }}</td>
+                                    <td class="center">{{ strtoupper($slot->field_position ?? $slot->position ?? '-') }}</td>
+                                    <td class="player-name">{{ strtoupper($player->name ?? 'Data pemain tidak tersedia') }}</td>
+                                    <td class="center">{{ $playerGoals ?: '-' }}</td>
+                                    <td class="center">{{ $yellowCards ?: '-' }}</td>
+                                    <td class="center">{{ $redCards ?: '-' }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="6" class="empty-row">Belum ada data pemain utama.</td></tr>
+                            @endforelse
 
-<tr>
+                            @if($team['substitutes']->isNotEmpty())
+                                <tr class="subheading"><td colspan="6">PEMAIN CADANGAN</td></tr>
+                            @endif
 
-<td style="width:42%;">
-
-<div class="team-name">
-
-{{ strtoupper($match->homeClub->name) }}
-
-</div>
-
-</td>
-
-<td style="width:16%;" class="text-center">
-
-<div class="score">
-
-{{ $match->result?->home_score ?? 0 }}
-
--
-
-{{ $match->result?->away_score ?? 0 }}
-
-</div>
-
-</td>
-
-<td style="width:42%;">
-
-<div class="team-name">
-
-{{ strtoupper($match->awayClub->name) }}
-
-</div>
-
-</td>
-
-</tr>
-
+                            @forelse($team['substitutes'] as $slot)
+                                @php
+                                    $player = $slot->player ?? null;
+                                    $playerGoals = $player ? $goals->where('player_id', $player->id)->count() : 0;
+                                    $yellowCards = $player ? $cards->where('player_id', $player->id)->where('card_type', 'yellow')->count() : 0;
+                                    $redCards = $player ? $cards->where('player_id', $player->id)->where('card_type', 'red')->count() : 0;
+                                @endphp
+                                <tr>
+                                    <td class="center">{{ $player->jersey_number ?? '-' }}</td>
+                                    <td class="center">{{ strtoupper($slot->field_position ?? $slot->position ?? '-') }}</td>
+                                    <td class="player-name">{{ strtoupper($player->name ?? 'Data pemain tidak tersedia') }}</td>
+                                    <td class="center">{{ $playerGoals ?: '-' }}</td>
+                                    <td class="center">{{ $yellowCards ?: '-' }}</td>
+                                    <td class="center">{{ $redCards ?: '-' }}</td>
+                                </tr>
+                            @empty
+                                @if($team['starters']->isEmpty())
+                                    <tr><td colspan="6" class="empty-row">Belum ada data pemain cadangan.</td></tr>
+                                @endif
+                            @endforelse
+                        </tbody>
+                    </table>
+                </td>
+            @endforeach
+        </tr>
+    </tbody>
 </table>
 
-<div class="section-title">
-    DAFTAR PEMAIN
-</div>
-
-<table class="player-table">
-
-<tr>
-
-<!-- HOME -->
-
-<td style="width:50%; vertical-align:top;">
-
-<table>
-
-<thead>
-
-<tr>
-
-<th style="width:8%">No</th>
-
-<th style="width:10%">Pos</th>
-
-<th>Nama Pemain</th>
-
-<th style="width:6%">G</th>
-
-<th style="width:6%">Y</th>
-
-<th style="width:6%">R</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-@foreach($homeStarters as $slot)
-
-@php
-
-$player = $slot->player;
-
-$goal = $match->goals
-            ->where('player_id',$player->id)
-            ->count();
-
-$yellow = $match->cards
-            ->where('player_id',$player->id)
-            ->where('card_type','yellow')
-            ->count();
-
-$red = $match->cards
-            ->where('player_id',$player->id)
-            ->where('card_type','red')
-            ->count();
-
-@endphp
-
-<tr>
-
-<td class="text-center">
-{{ $player->jersey_number ?? '-' }}
-</td>
-
-<td class="text-center">
-{{ strtoupper($slot->field_position ?? '-') }}
-</td>
-
-<td>
-{{ strtoupper($player->name) }}
-</td>
-
-<td class="text-center">
-{{ $goal > 0 ? $goal : '-' }}
-</td>
-
-<td class="text-center">
-{{ $yellow > 0 ? $yellow : '-' }}
-</td>
-
-<td class="text-center">
-{{ $red > 0 ? $red : '-' }}
-</td>
-
-</tr>
-
-@endforeach
-
-@if($homeSubstitutes->count())
-
-<tr>
-
-<td colspan="6" class="gray bold text-center">
-
-PEMAIN CADANGAN
-
-</td>
-
-</tr>
-
-@endif
-
-@foreach($homeSubstitutes as $slot)
-
-@php
-
-$player = $slot->player;
-
-$goal = $match->goals
-            ->where('player_id',$player->id)
-            ->count();
-
-$yellow = $match->cards
-            ->where('player_id',$player->id)
-            ->where('card_type','yellow')
-            ->count();
-
-$red = $match->cards
-            ->where('player_id',$player->id)
-            ->where('card_type','red')
-            ->count();
-
-@endphp
-
-<tr>
-
-<td class="text-center">
-{{ $player->jersey_number ?? '-' }}
-</td>
-
-<td class="text-center">
-{{ strtoupper($slot->field_position ?? '-') }}
-</td>
-
-<td>
-{{ strtoupper($player->name) }}
-</td>
-
-<td class="text-center">
-{{ $goal > 0 ? $goal : '-' }}
-</td>
-
-<td class="text-center">
-{{ $yellow > 0 ? $yellow : '-' }}
-</td>
-
-<td class="text-center">
-{{ $red > 0 ? $red : '-' }}
-</td>
-
-</tr>
-
-@endforeach
-
-</tbody>
-
+<div class="section-title">PENCETAK GOL</div>
+<table class="event-table">
+    <thead>
+        <tr>
+            <th style="width: 15%;">Menit</th>
+            <th>Nama Pemain</th>
+            <th style="width: 30%;">Klub</th>
+            <th style="width: 15%;">Tipe Gol</th>
+        </tr>
+    </thead>
+    <tbody>
+        @forelse($goals as $goal)
+            @php
+                $goalClubName = $goal->club_id == $match->home_club_id
+                    ? ($homeClub->name ?? 'Tim Kandang')
+                    : ($awayClub->name ?? 'Tim Tandang');
+            @endphp
+            <tr>
+                <td class="center">{{ $goal->minute_label ?? $goal->minute ?? '-' }}{{ ($goal->minute_label ?? $goal->minute) !== null ? "'" : '' }}</td>
+                <td>{{ strtoupper($goal->player->name ?? '-') }}</td>
+                <td>{{ strtoupper($goalClubName) }}</td>
+                <td class="center">{{ $goal->is_penalty ? 'PENALTI' : 'NORMAL' }}</td>
+            </tr>
+        @empty
+            <tr><td colspan="4" class="empty-row">Belum ada gol yang tercatat.</td></tr>
+        @endforelse
+    </tbody>
 </table>
 
-</td>
-
-<!-- AWAY -->
-
-<td style="width:50%; vertical-align:top;">
-
-<table>
-
-<thead>
-
-<tr>
-
-<th style="width:8%">No</th>
-
-<th style="width:10%">Pos</th>
-
-<th>Nama Pemain</th>
-
-<th style="width:6%">G</th>
-
-<th style="width:6%">Y</th>
-
-<th style="width:6%">R</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-@foreach($awayStarters as $slot)
-
-@php
-
-$player = $slot->player;
-
-$goal = $match->goals
-            ->where('player_id',$player->id)
-            ->count();
-
-$yellow = $match->cards
-            ->where('player_id',$player->id)
-            ->where('card_type','yellow')
-            ->count();
-
-$red = $match->cards
-            ->where('player_id',$player->id)
-            ->where('card_type','red')
-            ->count();
-
-@endphp
-
-<tr>
-
-<td class="text-center">
-{{ $player->jersey_number ?? '-' }}
-</td>
-
-<td class="text-center">
-{{ strtoupper($slot->field_position ?? '-') }}
-</td>
-
-<td>
-{{ strtoupper($player->name) }}
-</td>
-
-<td class="text-center">
-{{ $goal > 0 ? $goal : '-' }}
-</td>
-
-<td class="text-center">
-{{ $yellow > 0 ? $yellow : '-' }}
-</td>
-
-<td class="text-center">
-{{ $red > 0 ? $red : '-' }}
-</td>
-
-</tr>
-
-@endforeach
-
-@if($awaySubstitutes->count())
-
-<tr>
-
-<td colspan="6" class="gray bold text-center">
-
-PEMAIN CADANGAN
-
-</td>
-
-</tr>
-
-@endif
-
-@foreach($awaySubstitutes as $slot)
-
-@php
-
-$player = $slot->player;
-
-$goal = $match->goals
-            ->where('player_id',$player->id)
-            ->count();
-
-$yellow = $match->cards
-            ->where('player_id',$player->id)
-            ->where('card_type','yellow')
-            ->count();
-
-$red = $match->cards
-            ->where('player_id',$player->id)
-            ->where('card_type','red')
-            ->count();
-
-@endphp
-
-<tr>
-
-<td class="text-center">
-{{ $player->jersey_number ?? '-' }}
-</td>
-
-<td class="text-center">
-{{ strtoupper(substr($slot->position ?? '-',0,2)) }}
-</td>
-
-<td>
-{{ strtoupper($player->name) }}
-</td>
-
-<td class="text-center">
-{{ $goal > 0 ? $goal : '-' }}
-</td>
-
-<td class="text-center">
-{{ $yellow > 0 ? $yellow : '-' }}
-</td>
-
-<td class="text-center">
-{{ $red > 0 ? $red : '-' }}
-</td>
-
-</tr>
-
-@endforeach
-
-</tbody>
-
+<div class="section-title">PERGANTIAN PEMAIN</div>
+<table class="event-table">
+    <thead>
+        <tr>
+            <th style="width: 15%;">Menit</th>
+            <th>Pemain Keluar</th>
+            <th>Pemain Masuk</th>
+            <th style="width: 25%;">Klub</th>
+        </tr>
+    </thead>
+    <tbody>
+        @forelse($substitutions as $sub)
+            @php
+                $subClubName = $sub->club_id == $match->home_club_id
+                    ? ($homeClub->name ?? 'Tim Kandang')
+                    : ($awayClub->name ?? 'Tim Tandang');
+                $subMinute = $sub->minute_label ?? $sub->minute;
+            @endphp
+            <tr>
+                <td class="center">{{ $subMinute ?? '-' }}{{ $subMinute !== null ? "'" : '' }}</td>
+                <td>{{ strtoupper($sub->playerOut->name ?? '-') }}</td>
+                <td>{{ strtoupper($sub->playerIn->name ?? '-') }}</td>
+                <td>{{ strtoupper($subClubName) }}</td>
+            </tr>
+        @empty
+            <tr><td colspan="4" class="empty-row">Tidak ada pergantian pemain.</td></tr>
+        @endforelse
+    </tbody>
 </table>
 
-</td>
+<div class="section-title">CATATAN PERTANDINGAN</div>
+<div class="notes-box">{{ filled($match->summary ?? null) ? $match->summary : 'Belum ada catatan pertandingan.' }}</div>
 
-</tr>
-
-</table>
-
-<div class="section-title">
-    PENCETAK GOL
-</div>
-
-<table class="goals-table">
-
-<thead>
-
-<tr>
-
-<th width="15%">Menit</th>
-<th>Nama Pemain</th>
-<th width="30%">Klub</th>
-<th width="15%">Tipe</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-@forelse($match->goals as $goal)
-
-<tr>
-
-<td class="text-center">
-{{ $goal->minute_label }}'
-</td>
-
-<td>
-{{ strtoupper($goal->player?->name ?? '-') }}
-</td>
-
-<td>
-{{ $goal->club_id == $match->home_club_id
-? strtoupper($match->homeClub->name)
-: strtoupper($match->awayClub->name) }}
-</td>
-
-<td class="text-center">
-{{ $goal->is_penalty ? 'PEN' : 'GOAL' }}
-</td>
-
-</tr>
-
-@empty
-
-<tr>
-
-<td colspan="4" class="text-center">
-Belum ada gol.
-</td>
-
-</tr>
-
-@endforelse
-
-</tbody>
-
-</table>
-
-<div class="section-title">
-    PERGANTIAN PEMAIN
-</div>
-
-<table class="substitutions-table">
-
-<thead>
-
-<tr>
-
-<th width="15%">Menit</th>
-
-<th>Keluar</th>
-
-<th>Masuk</th>
-
-<th width="25%">Klub</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-@forelse($match->substitutions as $sub)
-
-<tr>
-
-<td class="text-center">
-
-{{ $sub->minute_label }}'
-
-</td>
-
-<td>
-
-{{ strtoupper($sub->playerOut->name ?? '-') }}
-
-</td>
-
-<td>
-
-{{ strtoupper($sub->playerIn->name ?? '-') }}
-
-</td>
-
-<td>
-
-{{ $sub->club_id == $match->home_club_id
-? strtoupper($match->homeClub->name)
-: strtoupper($match->awayClub->name) }}
-
-</td>
-
-</tr>
-
-@empty
-
-<tr>
-
-<td colspan="4" class="text-center">
-
-Tidak ada pergantian pemain.
-
-</td>
-
-</tr>
-
-@endforelse
-
-</tbody>
-
-</table>
-
-<div class="section-title">
-
-CATATAN PERTANDINGAN
-
-</div>
-
-<table class="notes-table">
-
-<tr>
-
-<td style="padding:10px;">
-
-@if($match->summary)
-
-{{ $match->summary }}
-
-@else
-
-Belum ada catatan pertandingan.
-
-@endif
-
-</td>
-
-</tr>
-
-</table>
-
-<div class="section-title">
-
-PENGESAHAN
-
-</div>
-
+<div class="section-title">PENGESAHAN</div>
 <table class="signature-table">
-
-<tr>
-
-<td style="width:33%; text-align:center;">
-
-Pelatih {{ strtoupper($match->homeClub->name) }}
-
-<br><br><br><br>
-
-_________________________
-
-</td>
-
-<td style="width:33%; text-align:center;">
-
-Wasit Utama
-
-<br><br><br><br>
-
-_________________________
-
-</td>
-
-<td style="width:33%; text-align:center;">
-
-Pelatih {{ strtoupper($match->awayClub->name) }}
-
-<br><br><br><br>
-
-_________________________
-
-</td>
-
-</tr>
-
+    <tr>
+        <td>
+            <div class="signature-role">Pelatih {{ strtoupper($homeClub->name ?? 'TIM KANDANG') }}</div>
+            <div class="signature-space"></div>
+            <div class="signature-line"></div>
+        </td>
+        <td>
+            <div class="signature-role">Wasit Utama</div>
+            <div class="signature-space"></div>
+            <div class="signature-line"></div>
+        </td>
+        <td>
+            <div class="signature-role">Pelatih {{ strtoupper($awayClub->name ?? 'TIM TANDANG') }}</div>
+            <div class="signature-space"></div>
+            <div class="signature-line"></div>
+        </td>
+    </tr>
 </table>
-
-<hr>
 
 <div class="footer">
-
-SAPHYR Match Report
-
-<br>
-
-Dicetak pada: {{ now()->format('d F Y H:i:s') }}
-
+    <strong>SAPHYR — Match Summary Report</strong><br>
+    Dokumen ini dibuat secara otomatis oleh sistem SAPHYR.<br>
+    Dicetak pada: {{ now()->format('d F Y, H:i:s') }} WIB
 </div>
 
 </body>
-
 </html>
